@@ -22,6 +22,24 @@ def scrape_tree(tree_id) -> dict:
     ).json()
 
 
+def scrape_trees_in_category(category_id) -> dict:
+    data = requests.get(
+        f"https://imperialdawn.com/api/data/treeCategories/{category_id}/trees",
+        verify=False,
+    ).json()
+    data = data["_embedded"]["abilityTrees"]
+    data = [
+        {
+            "id": tree["id"],
+            "name": tree["name"],
+            "description": tree["description"],
+            "learnable": tree["learnable"],
+        }
+        for tree in data
+    ]
+    return data
+
+
 def scrape_categories() -> dict:
     data = requests.get(
         "https://imperialdawn.com/api/data/treeCategories", verify=False
@@ -42,8 +60,21 @@ def main():
     # Turn off the InsecureRequestWarning, broken SSL is part of the motivation for this anyway
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    pprint(scrape_categories())
-    save_json(scrape_tree(419), 419)
+    # Pull Categories
+    categories = scrape_categories()
+    save_json(categories, "categories")
+
+    # Pull Trees
+    all_trees = []
+    for category in categories:
+        print(f"Pulling {category['name']}")
+        trees = scrape_trees_in_category(category["id"])
+        all_trees.extend(trees)
+        pprint(trees)
+        for tree in trees:
+            save_json(scrape_tree(tree["id"]), tree["id"])
+
+    save_json(all_trees, "trees")
 
 
 if __name__ == "__main__":
