@@ -14,12 +14,37 @@ def save_json(json_data, file_name: str) -> None:
         outfile.write(json.dumps(json_data, indent=3, sort_keys=True))
 
 
+def scrape_tree_prerequisites(tree_id) -> dict:
+    """Mostly a helpful function for scrape_tree but I don't know your life."""
+    data = requests.get(
+        f"https://imperialdawn.com/api/data/abilityTrees/prerequisiteGraph?treeId={tree_id}",
+        verify=False,
+    ).json()
+    return {ability["id"]: ability["prereqs"] for ability in data}
+
+
 def scrape_tree(tree_id) -> dict:
-    """Retrieves an ability tree as a json string"""
-    return requests.get(
+    """Retrieves an ability tree with all abilities as a json string"""
+    prereqs = scrape_tree_prerequisites(tree_id)
+
+    data = requests.get(
         f"https://imperialdawn.com/api/data/abilities/search/findInTree?treeId={tree_id}",
         verify=False,
     ).json()
+    data = data["_embedded"]["abilities"]
+    data = [
+        {
+            "id": ability["id"],
+            "name": ability["name"],
+            "description": ability["description"],
+            "type": ability["type"],
+            "checkTrait": ability["checkTrait"],
+            "saveTrait": ability["saveTrait"],
+            "prereqs": prereqs[ability["id"]],
+        }
+        for ability in data
+    ]
+    return data
 
 
 def scrape_trees_in_category(category_id) -> dict:
