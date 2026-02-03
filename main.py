@@ -72,7 +72,7 @@ def main():
         all_trees.extend(trees)
         pprint(trees)
         for tree in trees:
-            save_json(scrape_tree(tree["id"]), tree["id"])
+            save_json(scrape_tree(tree["id"]), tree["name"].replace("/", ""))
 
     save_json(all_trees, "trees")
 
